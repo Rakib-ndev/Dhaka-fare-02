@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#030409" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" type="image/svg+xml" href="icon.svg" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Dhaka Fare" />
+<title>Dhaka Offline Fare Calculator</title>
+<style>
+:root{--bg:#030409;--card:#090d16;--card-2:#0e1420;--border:#172033;--text:#eef2f7;--muted:#76849b;--accent:#10b981;--accent-soft:rgba(16,185,129,.14);--amber:#f59e0b;--danger:#ef4444;color-scheme:dark}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);min-height:100vh;display:flex;justify-content:center;padding:calc(16px + env(safe-area-inset-top,0px)) 14px calc(40px + env(safe-area-inset-bottom,0px))}
+.app{width:100%;max-width:440px}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.brand{display:flex;flex-direction:column}
+.brand h1{font-size:18px;font-weight:700;letter-spacing:-.2px}
+.brand span{font-size:12px;color:var(--muted)}
+.lock-btn{background:var(--card);border:1px solid var(--border);color:var(--muted);width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.lock-btn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:14px;gap:4px}
+.tab-btn{background:transparent;border:none;color:var(--muted);font-size:14px;font-weight:600;padding:10px;border-radius:9px;cursor:pointer}
+.tab-btn.active{background:var(--card-2);color:var(--text);box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:14px}
+.ev-modes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.pill-btn{background:var(--card-2);border:1px solid var(--border);color:var(--muted);padding:9px 10px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer}
+.pill-btn.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.pax-row{display:flex;align-items:center;justify-content:space-between;background:var(--card-2);border:1px solid var(--border);border-radius:12px;padding:10px 14px;margin-bottom:16px}
+.pax-row span{font-size:13px;color:var(--muted);font-weight:500}
+.pax-pills{display:flex;gap:6px}
+.pax-btn{width:34px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;font-weight:600;cursor:pointer}
+.pax-btn.active{background:var(--accent);border-color:var(--accent);color:#052e16}
+.dist-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.dist-header label{font-size:13px;color:var(--muted);font-weight:600}
+.dist-input-wrap{display:flex;align-items:center;background:var(--card-2);border:1px solid var(--border);border-radius:10px;padding:6px 10px;width:115px}
+.dist-input-wrap:focus-within{border-color:var(--accent)}
+.dist-input-wrap input{width:100%;background:transparent;border:none;color:var(--text);font-size:17px;font-weight:700;text-align:right;outline:none}
+.dist-input-wrap span{font-size:13px;color:var(--muted);margin-left:5px;font-weight:600}
+input[type=range]{width:100%;accent-color:var(--accent);height:6px;background:var(--card-2);border-radius:6px;outline:none;margin:8px 0 14px;cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:var(--card-2);border:1px solid var(--border);color:var(--muted);font-size:12px;font-weight:600;padding:6px 10px;border-radius:8px;cursor:pointer}
+.chip.active{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.result-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:14px}
+.result-grid.two-col{grid-template-columns:1fr 1fr;margin-bottom:0}
+.stat-box{background:var(--card-2);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center}
+.stat-box.primary{border-color:rgba(16,185,129,.45);background:linear-gradient(180deg,rgba(16,185,129,.10) 0%,rgba(14,20,32,.95) 100%)}
+.stat-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;font-weight:600}
+.stat-val{font-size:32px;font-weight:800;color:var(--accent);letter-spacing:-.5px}
+.stat-box.secondary .stat-val{font-size:26px;color:var(--text)}
+.drawer{display:none;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px}
+.drawer.open{display:block}
+.drawer-title{font-size:13px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.reset-btn{background:transparent;border:1px solid var(--border);color:var(--muted);font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer}
+.section-sub{font-size:12px;font-weight:700;color:var(--muted);margin:14px 0 8px;text-transform:uppercase;letter-spacing:.4px}
+.rate-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{background:var(--card-2);border:1px solid var(--border);border-radius:10px;padding:8px 10px}
+.field label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
+.field input{width:100%;background:transparent;border:none;color:var(--text);font-size:15px;font-weight:700;outline:none}
+.breakdown-list{background:var(--card-2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-top:10px}
+.b-row{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;color:var(--muted)}
+.b-row strong{color:var(--text)}
+.b-row.profit strong{color:var(--accent);font-size:15px}
+.b-row.loss strong{color:var(--danger);font-size:15px}
+.bar-wrap{height:10px;background:#030409;border-radius:6px;overflow:hidden;display:flex;margin-top:8px}
+.bar-cost{background:var(--danger);height:100%}
+.bar-profit{background:var(--accent);height:100%}
+.proj-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.proj-card{background:var(--card-2);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center}
+.proj-card span{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
+.proj-card strong{font-size:18px;color:var(--accent)}
+.note{font-size:11px;color:var(--muted);text-align:center;margin-top:12px;line-height:1.5}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="brand">
+      <h1>Dhaka Fare Calculator</h1>
+      <span id="subTitle">160cc Bike • Offline Estimate</span>
+    </div>
+    <button class="lock-btn" id="lockBtn" type="button" title="Rider Settings & Profit" aria-label="Toggle Rider Panel" onclick="toggleRider()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+    </button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" type="button" id="tabBike" onclick="switchVehicle('bike')">160cc Bike</button>
+    <button class="tab-btn" type="button" id="tabEv" onclick="switchVehicle('ev')">Electric (EV)</button>
+  </div>
+
+  <div class="card">
+    <div class="ev-modes hidden" id="evModes">
+      <button class="pill-btn active" type="button" id="modeEvBike" onclick="setEvMode('evBike')">EV Bike</button>
+      <button class="pill-btn" type="button" id="modeEvAuto" onclick="setEvMode('evAuto')">EV Auto</button>
+    </div>
+    <div class="pax-row"><span>Passengers</span><div class="pax-pills" id="paxPills"></div></div>
+    <div class="dist-header">
+      <label for="distInput">Distance</label>
+      <div class="dist-input-wrap"><input id="distInput" type="number" inputmode="decimal" min="0.5" max="60" step="0.1" oninput="onDistInput(this.value)" /><span>km</span></div>
+    </div>
+    <input type="range" id="distRange" min="0.5" max="30" step="0.5" oninput="setDist(this.value)" aria-label="Distance slider" />
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <div class="result-grid">
+    <div class="stat-box primary"><div class="stat-label">Estimated fare</div><div class="stat-val" id="fareVal">৳0</div></div>
+    <div class="result-grid two-col">
+      <div class="stat-box secondary"><div class="stat-label">Distance</div><div class="stat-val" id="distVal">0 km</div></div>
+      <div class="stat-box secondary"><div class="stat-label">Approx. time</div><div class="stat-val" id="timeVal">0 min</div></div>
+    </div>
+  </div>
+
+  <div class="drawer" id="drawer">
+    <div class="drawer-title"><span>Rider panel</span><button class="reset-btn" type="button" onclick="resetRates()">Reset rates</button></div>
+    <div class="section-sub" style="margin-top:0">Rates for <span id="rateName"></span></div>
+    <div class="rate-grid" id="rateGrid"></div>
+    <p class="note" id="rateNote" style="text-align:left;margin-top:10px"></p>
+
+    <div class="section-sub">Profit on this trip</div>
+    <div class="breakdown-list">
+      <div class="b-row"><span>Fare collected</span><strong id="bFare"></strong></div>
+      <div class="b-row"><span>Platform cut</span><strong id="bComm"></strong></div>
+      <div class="b-row"><span>Fuel / power</span><strong id="bEnergy"></strong></div>
+      <div class="b-row"><span>Maintenance</span><strong id="bMaint"></strong></div>
+      <div class="b-row profit" id="bNetRow"><span>Net profit</span><strong id="bNet"></strong></div>
+      <div class="bar-wrap"><div class="bar-cost" id="barCost"></div><div class="bar-profit" id="barProfit"></div></div>
+    </div>
+
+    <div class="section-sub">Earnings projection</div>
+    <div class="rate-grid">
+      <div class="field"><label for="tripsIn">Trips per day</label><input id="tripsIn" type="number" inputmode="decimal" min="0" oninput="setPlan('trips',this.value)" /></div>
+      <div class="field"><label for="daysIn">Working days / month</label><input id="daysIn" type="number" inputmode="decimal" min="0" max="31" oninput="setPlan('days',this.value)" /></div>
+    </div>
+    <div class="proj-cards">
+      <div class="proj-card"><span>Net per day</span><strong id="pDay"></strong></div>
+      <div class="proj-card"><span>Net per month</span><strong id="pMonth"></strong></div>
+    </div>
+    <p class="note">Based on the distance and passengers selected above. Rates and plan are saved on this device.</p>
+  </div>
+</div>
+
+<script>
+const DEF = {
+  bike:   {base:20, min:50, start:9, floor:4, tau:6, energy:165, eff:40, maint:1.5, comm:15, extra:20},
+  evBike: {base:18, min:40, start:8, floor:3.5, tau:6, energy:12, eff:25, maint:0.8, comm:15, extra:20},
+  evAuto: {base:15, min:30, start:7, floor:3, tau:6, energy:12, eff:14, maint:1.2, comm:15, extra:60}
+};
+const NAMES = {bike:'160cc Bike', evBike:'EV Bike', evAuto:'EV Auto'};
+const MAXPAX = {bike:2, evBike:2, evAuto:4};
+const SPEED = {bike:20, evBike:18, evAuto:14}; // average km/h in Dhaka traffic
+const CHIPS = [1, 2, 3, 5, 8, 12, 20];
+const STORE = 'dhakaFareV2';
+
+const S = {veh:'bike', ev:'evBike', pax:1, dist:5, rates:JSON.parse(JSON.stringify(DEF)), trips:12, days:26};
+const $ = id => document.getElementById(id);
+const key = () => S.veh === 'bike' ? 'bike' : S.ev;
+const tk = n => '৳' + Math.round(n).toLocaleString('en-US');
+const num = (v, fb) => { const n = parseFloat(v); return isFinite(n) && n >= 0 ? n : fb; };
+
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(STORE) || 'null');
+    if (!d) return;
+    for (const k in DEF) if (d.rates && d.rates[k]) Object.assign(S.rates[k], d.rates[k]);
+    S.trips = num(d.trips, S.trips);
+    S.days = num(d.days, S.days);
+  } catch (e) {}
+}
+function save() {
+  try { localStorage.setItem(STORE, JSON.stringify({rates:S.rates, trips:S.trips, days:S.days})); } catch (e) {}
+}
+
+function switchVehicle(v) {
+  S.veh = v;
+  S.pax = Math.min(S.pax, MAXPAX[key()]);
+  render(true);
+}
+function setEvMode(m) {
+  S.ev = m;
+  S.pax = Math.min(S.pax, MAXPAX[key()]);
+  render(true);
+}
+function setPax(n) { S.pax = n; render(false); }
+function setDist(v) { S.dist = Math.min(60, Math.max(0.5, num(v, S.dist))); render(false, true); }
+function onDistInput(v) {
+  const n = parseFloat(v);
+  if (!isFinite(n) || n <= 0) return;      // wait until a valid number is typed
+  S.dist = Math.min(60, n);
+  render(false, false);
+}
+function toggleRider() {
+  const open = $('drawer').classList.toggle('open');
+  $('lockBtn').classList.toggle('active', open);
+}
+function setRate(k, v) {
+  S.rates[key()][k] = num(v, 0);
+  save(); render(false, false, true);
+}
+function setPlan(k, v) { S[k] = num(v, 0); save(); render(false, false, true); }
+function resetRates() {
+  S.rates[key()] = Object.assign({}, DEF[key()]);
+  save(); render(true);
+}
+
+// Running cost per km: fuel (or power) price divided by mileage, plus upkeep.
+// Worse mileage or a higher fuel price raises this, and the fare rises with it.
+function runCost(r) { return (r.eff > 0 ? r.energy / r.eff : 0) + r.maint; }
+function gross(r) { return 1 / (1 - Math.min(r.comm, 90) / 100); } // covers the platform cut
+// The rider's own earning per km is highest at the start and tapers towards a floor.
+function earnAt(r, x) { return r.floor + (r.start - r.floor) * Math.exp(-x / Math.max(r.tau, 0.1)); }
+function rateAt(r, x) { return (runCost(r) + earnAt(r, x)) * gross(r); } // fare per km at km x
+function calc() {
+  const r = S.rates[key()], d = S.dist, tau = Math.max(r.tau, 0.1);
+  const earn = r.floor * d + (r.start - r.floor) * tau * (1 - Math.exp(-d / tau)); // total of the tapering earning
+  const raw = Math.max(r.min, (r.base + runCost(r) * d + earn) * gross(r));
+  const fare = Math.round(raw * (1 + r.extra / 100 * (S.pax - 1)) / 5) * 5; // round to nearest ৳5
+  const comm = fare * r.comm / 100;
+  const energy = r.eff > 0 ? d / r.eff * r.energy : 0;
+  const maint = d * r.maint;
+  return {fare, comm, energy, maint, net: fare - comm - energy - maint};
+}
+
+function renderRates() {
+  const ev = S.veh === 'ev';
+  const F = [
+    ['base','Base fare (৳)'], ['min','Minimum fare (৳)'],
+    ['start','Earn per km, start (৳)'], ['floor','Earn per km, long trips (৳)'], ['tau','Taper length (km)'],
+    ['energy', ev ? 'Power price (৳/kWh)' : 'Fuel price (৳/L)'],
+    ['eff', ev ? 'Efficiency (km/kWh)' : 'Mileage (km/L)'],
+    ['maint','Upkeep (৳/km)'], ['comm','Platform cut (%)'], ['extra','Extra rider (%)']
+  ];
+  const r = S.rates[key()];
+  $('rateName').textContent = NAMES[key()];
+  $('rateGrid').innerHTML = F.map(f =>
+    `<div class="field"><label for="r_${f[0]}">${f[1]}</label><input id="r_${f[0]}" type="number" inputmode="decimal" min="0" step="any" value="${r[f[0]]}" oninput="setRate('${f[0]}',this.value)" /></div>`
+  ).join('');
+}
+
+function render(full, syncInput = true, skipInputs = false) {
+  const k = key(), ev = S.veh === 'ev';
+  if (full) {
+    $('tabBike').classList.toggle('active', !ev);
+    $('tabEv').classList.toggle('active', ev);
+    $('evModes').classList.toggle('hidden', !ev);
+    $('modeEvBike').classList.toggle('active', S.ev === 'evBike');
+    $('modeEvAuto').classList.toggle('active', S.ev === 'evAuto');
+    $('subTitle').textContent = NAMES[k] + ' • Offline Estimate';
+    $('chips').innerHTML = CHIPS.map(c => `<button class="chip" type="button" data-km="${c}" onclick="setDist(${c})">${c} km</button>`).join('');
+    $('tripsIn').value = S.trips;
+    $('daysIn').value = S.days;
+    renderRates();
+  }
+  if (!skipInputs) {
+    $('paxPills').innerHTML = Array.from({length:MAXPAX[k]}, (_, i) => i + 1)
+      .map(n => `<button class="pax-btn${n === S.pax ? ' active' : ''}" type="button" onclick="setPax(${n})">${n}</button>`).join('');
+    if (syncInput) $('distInput').value = S.dist;
+    $('distRange').value = Math.min(30, S.dist);
+    document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', parseFloat(c.dataset.km) === S.dist));
+  }
+
+  const c = calc();
+  $('fareVal').textContent = tk(c.fare);
+  $('distVal').textContent = (Math.round(S.dist * 10) / 10) + ' km';
+  $('timeVal').textContent = Math.max(1, Math.round(S.dist / SPEED[k] * 60)) + ' min';
+
+  $('bFare').textContent = tk(c.fare);
+  $('bComm').textContent = '− ' + tk(c.comm);
+  $('bEnergy').textContent = '− ' + tk(c.energy);
+  $('bMaint').textContent = '− ' + tk(c.maint);
+  $('bNet').textContent = (c.net < 0 ? '− ' : '') + tk(Math.abs(c.net));
+  $('bNetRow').className = 'b-row ' + (c.net < 0 ? 'loss' : 'profit');
+  const costPct = c.fare > 0 ? Math.min(100, (c.fare - c.net) / c.fare * 100) : 100;
+  $('barCost').style.width = costPct + '%';
+  $('barProfit').style.width = (100 - costPct) + '%';
+
+  const day = c.net * S.trips;
+  $('pDay').textContent = (day < 0 ? '− ' : '') + tk(Math.abs(day));
+  $('pMonth').textContent = (day < 0 ? '− ' : '') + tk(Math.abs(day * S.days));
+
+  const r = S.rates[k];
+  $('rateNote').innerHTML = `Fuel or power cost: <strong>৳${(r.eff > 0 ? r.energy / r.eff : 0).toFixed(1)}/km</strong>. Fare per km: ৳${rateAt(r, 0).toFixed(1)} at the start, ৳${rateAt(r, 10).toFixed(1)} at 10 km, ৳${rateAt(r, 25).toFixed(1)} at 25 km. This trip averages <strong>৳${(c.fare / S.dist).toFixed(1)}/km</strong>.`;
+}
+
+load();
+render(true);
+
+// Lets the app open without internet once it has loaded one time.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+</body>
+  </html>
